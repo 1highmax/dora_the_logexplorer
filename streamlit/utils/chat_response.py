@@ -49,7 +49,7 @@ def get_backend_response(user_message):
     embedding = OpenAIEmbeddings()
 
     # Specify the unique persist directory for the vectordb
-    unique_persist_directory = 'db/6a8636de-a3fe-4143-81d3-8186c60049cb'
+    unique_persist_directory = '/Users/marian/Desktop/Hackatum/loganalysis/max/dora_the_logexplorer/db/9a81ee9dabdfbc3e9c94ad7cbaf6b79d'
 
     # Initialize the vector database
     vectordb = Chroma(persist_directory=unique_persist_directory, embedding_function=embedding)

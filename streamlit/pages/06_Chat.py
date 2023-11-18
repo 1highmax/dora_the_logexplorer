@@ -32,30 +32,36 @@ def save_uploaded_file(uploaded_file, directory="data", filename="uploaded_log.t
     
     return file_path
 
-# Function to display messages in speech bubbles
 def display_message(message, is_user=True):
-    bubble_color = "#009BEA" if is_user else "#A0A0A0"
-    align_text = "right" if is_user else "left"
+    # User messages are grey and aligned left, chatbot responses are blue and aligned right
+    bubble_color = "#A0A0A0" if is_user else "#009BEA"
+    align_text = "left" if is_user else "right"
+    float_text = "left" if is_user else "right"  # Ensures that the bubble floats to the correct side
+
     html = f"""
-    <div style="margin: 5px; padding: 10px; background-color: {bubble_color}; border-radius: 15px; text-align: {align_text}; max-width: 60%; float: {align_text}; clear: both;">
+    <div style="margin: 5px; padding: 10px; background-color: {bubble_color}; border-radius: 15px; text-align: {align_text}; max-width: 60%; float: {float_text}; clear: both;">
         {message}
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
 
+
 # Function to handle sending messages
 def send_message():
-    user_input = st.session_state['user_input']
+    user_input = st.session_state.get('user_input', '')
     if user_input:  # Check if the input is not empty
-        # Add user message to conversation
-        st.session_state['conversation'].append(user_input)
+        add_to_conversation(user_input, is_user=True)
         
         # Get chatbot response and add to conversation
         response = chatbot_response(user_input)
-        st.session_state['conversation'].append(response)
+        add_to_conversation(response, is_user=False)
 
     # Reset the input box
     st.session_state['user_input'] = ""
+
+# New function to add messages to conversation
+def add_to_conversation(message, is_user=True):
+    st.session_state['conversation'].append(message)
 
 
 st.header('Dora the Log-Explorer')
@@ -95,16 +101,13 @@ with col2:
         st.session_state['conversation'] = []
 
     # Display existing conversation
-    for i, message in enumerate(st.session_state['conversation']):
-        is_user = i % 2 == 0
+    for message in st.session_state['conversation']:
+        is_user = not st.session_state['conversation'].index(message) % 2 == 0
         display_message(message, is_user)
 
     # Text input for user message with a callback
-    # Use a default value that resets each time the button is pressed
-    default_value = "" if st.session_state.get('clear_input', False) else st.session_state.get('user_input', '')
-    user_input = st.text_input("Your message", key="user_input", value=default_value, on_change=send_message)
+    st.text_input("Your message", key="user_input", on_change=send_message, value="")
 
     # Button to send the message
     if st.button('Send'):
         send_message()
-        st.session_state['clear_input'] = True
