@@ -1,1 +1,3 @@
 *.how_to_azure
+db/*
+retrieval_results.txt
