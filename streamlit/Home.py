@@ -171,6 +171,12 @@ def add_to_conversation(message, is_user=True):
 
 saved_file_path = None
 
+def move_directory(src, dest):
+    if os.path.exists(src):
+        print(f"Moving existing database from {src} to {dest}")
+        shutil.move(src, dest)
+    else:
+        print(f"Directory {src} does not exist. No action taken.")
 
 with tab1:
     # In your Streamlit app
@@ -194,12 +200,11 @@ with tab1:
             # Process the file content with your function
             st.write("Creating Database")
             if os.path.basename(saved_file_path) == "test_log1.txt":
-                print("moving existing database to db/")
-                shutil.move('db_test_log1/', 'db/')
+                move_directory('db_test_log1/', 'db/')
             elif os.path.basename(saved_file_path) == "test_log2.txt":
-                shutil.move('db_test_log2/', 'db/')
+                move_directory('db_test_log2/', 'db/')
             elif os.path.basename(saved_file_path) == "final_log.txt":
-                shutil.move('db_final_log/', 'db/')
+                move_directory('db_final_log/', 'db/')
             create_database(saved_file_path)
             st.write("Log-File Ready to use")
             st.session_state['file_processed'] = True
