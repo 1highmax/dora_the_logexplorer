@@ -51,7 +51,7 @@ def request_summary_from_analysis():
     print("Analyzing log file...")
     summary = summarize_file("data/final_log_final.txt")
     print("requesting summary...")
-    request = "Context:\n" + summary + "\nSummarize the context in your own words. Do not quote the context directly, use your own words. Give relevant examples in the log file!"
+    request = "Context:\n" + summary + "\nSummarize the context in your own words. Do not quote the context directly, use your own words. rephrase everything. do not reuse parts of the context in your answer.. Give relevant examples in the log file!"
     # docs = retriever.get_relevant_documents(request)
     llm_response = qa_chain(request)  # Adjust this line as per LangChain's implementation
     output = "Summary:\n"+llm_response["result"]
@@ -76,7 +76,7 @@ def handle_chat(summary):
 
         # Include the context in the LLM invocation
         # The method to invoke the LLM might differ; this is a generalized example
-        llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question + "\nDo not write append 'Sources' to your answer!")  # Adjust this line as per LangChain's implementation
+        llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question)  # Adjust this line as per LangChain's implementation
         response = llm_response['result']
         # response = process_llm_response(llm_response)
         print(response)
