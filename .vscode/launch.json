@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "Python: File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "justMyCode": true,
+            "env": {"OPENAI_API_KEY":"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"}
+        }
+    ]
+}

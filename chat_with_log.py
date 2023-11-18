@@ -11,6 +11,8 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 import re
 from openai import OpenAI
 import time
+from summary import to_dict
+
 
 context_history = ""
 
@@ -18,7 +20,7 @@ context_history = ""
 client = OpenAI()
 
 # Setup the directory for database
-persist_directory = 'db'
+persist_directory = 'db_final'
 embedding = OpenAIEmbeddings()
 
 # Initialize the vector database
