@@ -9,6 +9,7 @@ from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
 from langchain.document_loaders import DirectoryLoader, TextLoader
 import re
+import hashlib
 
 def extract_log_data(line):
     # Regular expression to match the time, prefix, and message
@@ -19,31 +20,20 @@ def extract_log_data(line):
         return time, prefix, message
     else:
         return None, None, None
-
-
-
     
 
-import hashlib
 
-# Function to generate a unique hash for a file
-def generate_file_hash(file_path):
-    hasher = hashlib.md5()
-    with open(file_path, 'rb') as afile:
-        buf = afile.read()
-        hasher.update(buf)
-    return hasher.hexdigest()
 
-def create_database(saved_file_path):
+def create_database(file_path):
     print("starting")
     # OpenAI embeddings
     embedding = OpenAIEmbeddings()
     log_data=[]
     lines = []
-    file_path = saved_file_path
-    persist_directory = 'streamlit/db'
+    file_path = file_path
+    persist_directory = 'db'
 
-    loader = TextLoader(saved_file_path, encoding = 'UTF-8')
+    loader = TextLoader(file_path, encoding = 'UTF-8')
     doc = loader.load()
     len(doc)
 
@@ -53,17 +43,18 @@ def create_database(saved_file_path):
 
     # Count the number of chunks
     len(texts)
+        
+    with open(file_path, 'r') as file:
+        for line in file:
+            lines.append(line)
+            time, prefix, message = extract_log_data(line)
+            log_data.append({'time': time, 'prefix': prefix, 'message': message})
 
-    # Generate a unique identifier for the file
-    file_identifier = generate_file_hash(file_path)
-
-    # Use the unique identifier in the persist directory
-    unique_persist_directory = os.path.join(persist_directory, file_identifier)
 
     # Initialize the vector database with the unique persist directory
     vectordb = Chroma.from_documents(documents=texts,
                                     embedding=embedding,
-                                    persist_directory=unique_persist_directory)
+                                    persist_directory=persist_directory)
     vectordb.persist()
 
-    print("Vectordb initialized with unique persist directory:", unique_persist_directory)
+    print("Vectordb initialized with unique persist directory:", persist_directory)

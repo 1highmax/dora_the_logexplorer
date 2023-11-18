@@ -24,11 +24,7 @@ client = OpenAI()
 import os
 
 # Set the directory path
-persist_directory = '/Users/marian/Desktop/Hackatum/loganalysis/max/dora_the_logexplorer/streamlit/streamlit/db'
-
-# Check if the directory exists
-if not os.path.exists(persist_directory):
-    raise FileNotFoundError(f"The directory '{persist_directory}' does not exist.")
+persist_directory = 'db/a716d54d-a48a-484e-8880-5cb44d767635'
 
 # Rest of your script...
 
