@@ -21,30 +21,8 @@ def extract_log_data(line):
         return None, None, None
 
 
-print("starting")
-# OpenAI embeddings
-embedding = OpenAIEmbeddings()
-log_data=[]
-lines = []
-file_path = 'data/test_log2.txt'
-persist_directory = 'db'
 
-loader = TextLoader('data/test_log2.txt', encoding = 'UTF-8')
-doc = loader.load()
-len(doc)
-
-# Splitting the text into chunks
-text_splitter = RecursiveCharacterTextSplitter (chunk_size=1000, chunk_overlap=200)
-texts = text_splitter.split_documents(doc)
-
-# Count the number of chunks
-len(texts)
     
-with open(file_path, 'r') as file:
-    for line in file:
-        lines.append(line)
-        time, prefix, message = extract_log_data(line)
-        log_data.append({'time': time, 'prefix': prefix, 'message': message})
 
 import hashlib
 
@@ -56,16 +34,36 @@ def generate_file_hash(file_path):
         hasher.update(buf)
     return hasher.hexdigest()
 
-# Generate a unique identifier for the file
-file_identifier = generate_file_hash(file_path)
+def create_database(saved_file_path):
+    print("starting")
+    # OpenAI embeddings
+    embedding = OpenAIEmbeddings()
+    log_data=[]
+    lines = []
+    file_path = saved_file_path
+    persist_directory = 'streamlit/db'
 
-# Use the unique identifier in the persist directory
-unique_persist_directory = os.path.join(persist_directory, file_identifier)
+    loader = TextLoader(saved_file_path, encoding = 'UTF-8')
+    doc = loader.load()
+    len(doc)
 
-# Initialize the vector database with the unique persist directory
-vectordb = Chroma.from_documents(documents=texts,
-                                 embedding=embedding,
-                                 persist_directory=unique_persist_directory)
-vectordb.persist()
+    # Splitting the text into chunks
+    text_splitter = RecursiveCharacterTextSplitter (chunk_size=1000, chunk_overlap=200)
+    texts = text_splitter.split_documents(doc)
 
-print("Vectordb initialized with unique persist directory:", unique_persist_directory)
+    # Count the number of chunks
+    len(texts)
+
+    # Generate a unique identifier for the file
+    file_identifier = generate_file_hash(file_path)
+
+    # Use the unique identifier in the persist directory
+    unique_persist_directory = os.path.join(persist_directory, file_identifier)
+
+    # Initialize the vector database with the unique persist directory
+    vectordb = Chroma.from_documents(documents=texts,
+                                    embedding=embedding,
+                                    persist_directory=unique_persist_directory)
+    vectordb.persist()
+
+    print("Vectordb initialized with unique persist directory:", unique_persist_directory)

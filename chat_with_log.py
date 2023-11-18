@@ -11,7 +11,7 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 import re
 from openai import OpenAI
 import time
-from summary import summarize_file
+from utils.summary import summarize_file
 
 
 
@@ -21,7 +21,17 @@ context_history = ""
 client = OpenAI()
 
 # Setup the directory for database
-persist_directory = 'db'
+import os
+
+# Set the directory path
+persist_directory = '/Users/marian/Desktop/Hackatum/loganalysis/max/dora_the_logexplorer/streamlit/streamlit/db'
+
+# Check if the directory exists
+if not os.path.exists(persist_directory):
+    raise FileNotFoundError(f"The directory '{persist_directory}' does not exist.")
+
+# Rest of your script...
+
 embedding = OpenAIEmbeddings()
 
 # Initialize the vector database
@@ -47,9 +57,9 @@ def process_llm_response(llm_response):
     return response + sources
 
 
-def request_summary_from_analysis(file):
+def request_summary_from_analysis(saved_file_path):
     print("Analyzing log file...")
-    summary = summarize_file(file)
+    summary = summarize_file(saved_file_path)
     print("requesting summary...")
     request = "Context:\n" + summary + "\nSummarize the context in your own words. Do not quote the context directly, use your own words. rephrase everything. do not reuse parts of the context in your answer.. Give relevant examples in the log file!"
     # docs = retriever.get_relevant_documents(request)
@@ -58,36 +68,36 @@ def request_summary_from_analysis(file):
     return output
 
 
-def handle_chat(summary):
+def handle_chat(question):
     global context_history  # Use the global context history variable
+    # question = input("Ask a question: ")
 
-    while True:
-        question = input("Ask a question: ")
-        if question.lower() == 'exit':
-            break
+    # Update context with the new question
+    context_history += f'Question: {question}\n'
 
-        # Update context with the new question
-        context_history += f'Question: {question}\n'
+    # docs = retriever.get_relevant_documents(question)
+    # if not docs:
+    #     print("No relevant documents found.")
+    #     continue
 
-        # docs = retriever.get_relevant_documents(question)
-        # if not docs:
-        #     print("No relevant documents found.")
-        #     continue
+    # Include the context in the LLM invocation
+    # The method to invoke the LLM might differ; this is a generalized example
+    llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question)  # Adjust this line as per LangChain's implementation
+    response = llm_response['result']
+    # response = process_llm_response(llm_response)
+    print(response)
 
-        # Include the context in the LLM invocation
-        # The method to invoke the LLM might differ; this is a generalized example
-        llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question)  # Adjust this line as per LangChain's implementation
-        response = llm_response['result']
-        # response = process_llm_response(llm_response)
-        print(response)
-
-        # Update context with the response
-        context_history += f'Answer: {response}\n'
-        summary_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + "Summary so far: " + summary + "\n\n\n" + "Based on this summary, create a summary that is more aligned to the interest of the user! Reformulate the existing summary, and add information from the end of the context!")  # Adjust this line as per LangChain's implementation
-        summary = summary_response["result"]
-        print("New Summary:\n" + summary)
+    # Update context with the response
+    with open("summary.txt", 'r') as file:
+        summary=file.read()
+    context_history += f'Answer: {response}\n'
+    summary_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + "Summary so far: " + summary + "\n\n\n" + "Based on this summary, create a summary that is more aligned to the interest of the user! Reformulate the existing summary, and add information from the end of the context!")  # Adjust this line as per LangChain's implementation
+    summary = summary_response["result"]
+    print("New Summary:\n" + summary)
+    with open("summary.txt", 'w') as file:  # 'a' for append mode
+        file.write(summary + '\n')
+    return response
 # Start the chat
-file = "data/final_log_final.txt"
-summary = request_summary_from_analysis(file)
-print("Sumamry:\n" + summary)
-handle_chat(summary)
+#summary = request_summary_from_analysis()
+#print("Sumamry:\n" + summary)
+#handle_chat(summary)

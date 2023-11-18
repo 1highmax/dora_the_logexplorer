@@ -1,15 +1,17 @@
 import streamlit as st
 import utils.streamlit_utils as st_utils
-from utils.chat_response import get_backend_response
-from utils.log_to_db import process_log_file 
 import os
 import tempfile
 from langchain.document_loaders import DirectoryLoader, TextLoader
+from utils.chat_with_log import handle_chat, request_summary_from_analysis
+from utils.create_db import create_database
+
+from utils.create_db import create_database
 
 st.set_page_config(page_title="Chat", layout='wide')
 
 def cached_backend_response(message):
-    response = get_backend_response(message)
+    response = handle_chat(message)
     print("response: ", response)
     return response
 
@@ -80,18 +82,13 @@ with col1:
     if uploaded_file is not None:
         # Save the uploaded file and get its path
         saved_file_path = save_uploaded_file(uploaded_file)
+        print(saved_file_path)
 
-        # Now you can use TextLoader to load from this file path
-        loader = TextLoader(saved_file_path, encoding='UTF-8')
-        doc = loader.load()
+        request_summary_from_analysis(saved_file_path)
 
         # Process the file content with your function
-        #vectordb = process_log_file(doc)
+        #create_database(saved_file_path)
 
-        #init()
-
-        # Display the file content in a text area
-        st.text_area("File content", doc, height=300)
     else:
         st.write("Please upload a text file.")
 
