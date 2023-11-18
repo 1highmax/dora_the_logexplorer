@@ -11,7 +11,8 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 import re
 from openai import OpenAI
 import time
-from summary import to_dict
+from summary import summarize_file
+
 
 
 context_history = ""
@@ -45,7 +46,19 @@ def process_llm_response(llm_response):
     sources = '\n\nSources:\n' + '\n'.join([source.metadata['source'] for source in llm_response["source_documents"]])
     return response + sources
 
-def handle_chat():
+
+def request_summary_from_analysis():
+    print("Analyzing log file...")
+    summary = summarize_file("data/final_log_final.txt")
+    print("requesting summary...")
+    request = "Context:\n" + summary + "\nSummarize the context in your own words. Do not quote the context directly, use your own words. Give relevant examples in the log file!"
+    # docs = retriever.get_relevant_documents(request)
+    llm_response = qa_chain(request)  # Adjust this line as per LangChain's implementation
+    output = "Summary:\n"+llm_response["result"]
+    return output
+
+
+def handle_chat(summary):
     global context_history  # Use the global context history variable
 
     while True:
@@ -56,19 +69,24 @@ def handle_chat():
         # Update context with the new question
         context_history += f'Question: {question}\n'
 
-        docs = retriever.get_relevant_documents(question)
-        if not docs:
-            print("No relevant documents found.")
-            continue
+        # docs = retriever.get_relevant_documents(question)
+        # if not docs:
+        #     print("No relevant documents found.")
+        #     continue
 
         # Include the context in the LLM invocation
         # The method to invoke the LLM might differ; this is a generalized example
-        llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question)  # Adjust this line as per LangChain's implementation
-        response = process_llm_response(llm_response)
+        llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question + "\nDo not write append 'Sources' to your answer!")  # Adjust this line as per LangChain's implementation
+        response = llm_response['result']
+        # response = process_llm_response(llm_response)
         print(response)
 
         # Update context with the response
         context_history += f'Answer: {response}\n'
-
+        summary_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + "Summary so far: " + summary + "\n\n\n" + "Based on this summary, create a summary that is more aligned to the interest of the user! Reformulate the existing summary, and add information from the end of the context!")  # Adjust this line as per LangChain's implementation
+        summary = summary_response["result"]
+        print("New Summary:\n" + summary)
 # Start the chat
-handle_chat()
+summary = request_summary_from_analysis()
+print("Sumamry:\n" + summary)
+handle_chat(summary)

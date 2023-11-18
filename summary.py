@@ -1,5 +1,24 @@
 import re
 from collections import Counter
+import matplotlib.pyplot as plt
+from collections import Counter
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from collections import Counter
+from dateutil import parser
+from collections import defaultdict
+import datetime
+from datetime import datetime
+from dateutil import parser
+from datetime import timedelta
+
+
+summary_file = "summary.txt"
+with open(summary_file, 'w') as file:
+    pass
+def write_to_file(content):
+    with open(summary_file, 'a') as file:  # 'a' for append mode
+        file.write(content + '\n')
 
 def extract_log_data(line):
     # Regular expression to match the time, prefix, and message
@@ -30,27 +49,11 @@ def most_common_prefixes(log_data, n):
 def analyze_log_file(file_path):
     log_data = to_dict(file_path)
     most_prefixes = most_common_prefixes(log_data,30)
-    print("Most Common Prefixes:")
+    write_to_file("Most Common Prefixes:")
     for prefix in most_prefixes:
-        print(f"- {prefix}")
+        write_to_file(f"- {prefix}")
 
-import matplotlib.pyplot as plt
-from collections import Counter
 
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from collections import Counter
-from dateutil import parser
-
-def to_datetime(log_data):
-    # Convert timestamp strings to datetime objects
-    datetime_objects = [parser.parse(log['time']) for log in log_data if log['time']]
-    # Count occurrences of each datetime
-    datetime_counts = Counter(datetime_objects)
-    return datetime_objects
-
-from collections import defaultdict
-import datetime
 
 def aggregate_counts(datetime_counts, interval='hourly'):
     aggregated_counts = defaultdict(int)
@@ -65,30 +68,44 @@ def aggregate_counts(datetime_counts, interval='hourly'):
         aggregated_counts[rounded_datetime] += count
     return aggregated_counts
 
-def find_most_active_timeframes(datetime_counts, interval='hourly',top_n=10):
+def find_most_active_timeframes(datetime_counts, interval='hourly', top_n=10):
     aggregated_counts = aggregate_counts(datetime_counts, interval)
-    # Sort the timeframes by datetime in ascending order
-    sorted_by_time = sorted(aggregated_counts.items(), key=lambda x: x[0])[:top_n]
-    return sorted_by_time
+    # Sort the timeframes by number of hits in descending order
+    sorted_by_hits = sorted(aggregated_counts.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    return sorted_by_hits
+
+
+def find_least_active_timeframes(datetime_counts, interval='hourly',top_n=10):
+    aggregated_counts = aggregate_counts(datetime_counts, interval)
+    # Sort the timeframes by number of hits in ascending order
+    sorted_by_hits = sorted(aggregated_counts.items(), key=lambda x: x[1])[:top_n]
+    return sorted_by_hits
 
 
 def parse_timestamp(timestamp):
+    current_year = datetime.now().year
+    timestamp_with_year = f"{current_year} {timestamp}"
     try:
-        # Assuming the format is consistent as "Mon DD HH:MM:SS"
-        return datetime.strptime(timestamp, '%b %d %H:%M:%S')
+        # Adjust the format to include the year
+        return datetime.strptime(timestamp_with_year, '%Y %b %d %H:%M:%S')
     except ValueError:
         # Handle cases where the timestamp format might be incorrect
         return None
-    
-from dateutil import parser
-from datetime import timedelta
+def to_datetime(log_data):
+    # Convert timestamp strings to datetime objects
+    datetime_objects = [parse_timestamp(log['time']) for log in log_data if log['time']]
+    # Count occurrences of each datetime
+    datetime_counts = Counter(datetime_objects)
+    return datetime_objects
+
 
 def calculate_log_duration_hours(log_data):
     if not log_data:
         return 0
 
     # Extract datetime objects from log data
-    datetime_objects = [parser.parse(log['time']) for log in log_data if log['time']]
+    datetime_objects = [parse_timestamp(log['time']) for log in log_data if log['time']]
+
 
     if not datetime_objects:
         return 0
@@ -101,22 +118,32 @@ def calculate_log_duration_hours(log_data):
     duration = latest_time - earliest_time
     duration_in_hours = duration.total_seconds() / 3600
 
-    print(f"the log goes from {earliest_time} to {latest_time}, which is {int(duration_in_hours+1)} hours")
+    write_to_file(f"the log goes from {earliest_time} to {latest_time}, which is {int(duration_in_hours+1)} hours")
 
     return duration_in_hours
 
-file_name = "data/final_log_final.txt"
 
-log_data = to_dict(file_name)
-log_duration_hours = calculate_log_duration_hours(log_data)
-print(f"Total log duration: {int(log_duration_hours+1)} hours") # round
+def summarize_file(file_name):
+    # file_name = "data/final_log_final.txt"
+
+    log_data = to_dict(file_name)
+    log_duration_hours = calculate_log_duration_hours(log_data)
+    write_to_file(f"Total log duration: {int(log_duration_hours+1)} hours") # round
 
 
-datetime_objects = to_datetime(log_data)
-datetime_counts = Counter(datetime_objects)
-most_active_hours = find_most_active_timeframes(datetime_counts, 'hourly', 20)
-print("Most Active Hours:")
-for datetime, count in most_active_hours:
-    print(f"{datetime}: {count} messages")
+    datetime_objects = to_datetime(log_data)
+    datetime_counts = Counter(datetime_objects)
+    most_active_hours = find_most_active_timeframes(datetime_counts, 'hourly', 5)
+    write_to_file("Most Active Hours:")
+    for datetime, count in most_active_hours:
+        write_to_file(f"{datetime}: {count} messages")
 
-# analyze_log_file(file_name)
+    least_active_hours = find_least_active_timeframes(datetime_counts, 'hourly', 5)
+    write_to_file("Least Active Hours:")
+    for datetime, count in least_active_hours:
+        write_to_file(f"{datetime}: {count} messages")
+
+    analyze_log_file(file_name)
+
+    with open(summary_file, 'r') as file:
+        return file.read()

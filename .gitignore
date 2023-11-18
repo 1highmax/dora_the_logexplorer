@@ -3,3 +3,4 @@ db/*
 retrieval_results.txt
 __pycache__/*
 db_final/*
+summary.txt

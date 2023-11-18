@@ -6,7 +6,7 @@
             "request": "launch",
             "program": "${file}",
             "justMyCode": true,
-            "env": {"OPENAI_API_KEY":"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"}
+            "env": {"OPENAI_API_KEY":"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"}
         }
     ]
 }
