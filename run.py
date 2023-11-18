@@ -11,6 +11,7 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 import re
 from openai import OpenAI
 import time
+import json
 
 client = OpenAI()
 
@@ -25,9 +26,11 @@ def searchDatabase(query):
     vectordb = Chroma(persist_directory=persist_directory,
                     embedding_function=embedding)
 
-    retriever = vectordb.as_retriever(search_kwargs={"k": 10})
+    retriever = vectordb.as_retriever(search_kwargs={"k": 15})
     docs = retriever.get_relevant_documents(question)
     print(docs) 
+
+    print("\n\n\n\n\n\n\n\n")
 
 
     # Write the result to a file
@@ -37,6 +40,10 @@ def searchDatabase(query):
 
     # Assume docs is the list of documents retrieved from Chroma
     aggregated_content = " ".join([doc.page_content for doc in docs])
+
+    print(aggregated_content)
+
+    print("\n\n\n\n\n\n\n\n")
 
     return aggregated_content
 
@@ -51,19 +58,17 @@ def searchDatabase(query):
 # Print the response from GPT-4
 # print(response)
 
+def chat_iteration(user_input, previous_messages):
+    # Add the user's message to the conversation history
+    previous_messages.append({"role": "user", "content": user_input})
 
-client = OpenAI()
+    # Add a system message (if needed) before making the API call
+    system_message = "The user needs an interpretation of the log file based on the question he asks. Be precise and remember all your context"  # Customize this message as needed
+    previous_messages.append({"role": "system", "content": system_message})
 
-file = client.files.create(
-  file=open("retrieval_results.txt", "rb"),
-  purpose='assistants'
-)
     
-# Create the Assistant with the new function
-assistant = client.beta.assistants.create(
-    instructions="You are an advanced bot. Use the provided functions to answer questions and search the database.",
-    model="gpt-4-1106-preview",
-    tools=[
+    # Define the tools and assistant model
+    tools = [
         {
             "type": "function",
             "function": {
@@ -72,62 +77,70 @@ assistant = client.beta.assistants.create(
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "query": {"type": "string", "description": "The query to search in the database"},
+                        "query": {"type": "string", "description": "What to search for in complete sentence, e.g. Search for Malicious occurences in the file."},
                     },
                     "required": ["query"]
                 }
             }
         }
     ]
-)
+    
+    # Get the response from the assistant
+    response = client.chat.completions.create(
+        model="gpt-4-1106-preview",
+        messages=previous_messages,
+        tools=tools,
+        tool_choice="auto",
+    )
 
-thread = client.beta.threads.create()
+    # Process the response and tool calls
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
+
+    if tool_calls:
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            if function_name == "searchFile":
+                # Extract arguments and call the appropriate function
+                function_args = json.loads(tool_call.function.arguments)
+                function_response = searchDatabase(query=function_args["query"])
 
 
-# message = client.beta.threads.messages.create(
-#     thread_id=thread.id,
-#     role="user",
-#     content=question
-# )
+                # Add function response as a system message for the next model call
+                previous_messages.append({
+                    "role": "assistant",
+                    "content": function_response
+                })
 
-run = client.beta.threads.runs.create(
-  thread_id=thread.id,
-  assistant_id=assistant.id,
-  instructions="Please address the user as Admin. The user needs an interpretation of the log file based on the question he asks. Be precise and remember all your context"
-)
+                # Add a system message for additional context or guidance
+                previous_messages.append({
+                    "role": "system", 
+                    "content": 'The previous logs is the result of a verctordb search of the entire logfile. When responding to the user talk about you have searched the entire log-file.'
+                })
 
-run = client.beta.threads.runs.retrieve(
-  thread_id=thread.id,
-  run_id=run.id
-)
-
-# Function to check the Run status
-def check_run_status(client, thread_id, run_id):
-    while True:
-        # Retrieve the Run
-        run = client.beta.threads.runs.retrieve(
-            thread_id=thread_id,
-            run_id=run_id
+        # Get a new response from the model incorporating the function response
+        second_response = client.chat.completions.create(
+            model="gpt-4-1106-preview",
+            messages=previous_messages,
         )
 
-        # Check if the Run status is 'completed'
-        if run.status == 'completed':
-            print("Run is completed.")
+        # Print the model's response interpreting the function output
+        print(second_response.choices[0].message.content)
+    else:
+        print(response_message.content)
+
+    return previous_messages
+
+
+# Main chat loop with conversation history
+def main_chat_loop():
+    print("Welcome to Dora the Log Explorer. Type 'exit' to end the session.")
+    conversation_history = []
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == 'exit':
             break
-        else:
-            print("Run is still in progress. Waiting for completion...")
-            time.sleep(1)  # Wait for 5 seconds before checking again
+        conversation_history = chat_iteration(user_input, conversation_history)
 
-# Function to display the Assistant's response
-def display_assistant_response(client, thread_id):
-    messages = client.beta.threads.messages.list(
-        thread_id=thread_id
-    )
-    for message in messages.data:
-        print(message.content)
-
-# Check the Run status
-check_run_status(client, thread.id, run.id)
-
-# Display the Assistant's response
-display_assistant_response(client, thread.id)
+# Run the main chat loop
+main_chat_loop()

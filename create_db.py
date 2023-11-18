@@ -26,10 +26,10 @@ print("starting")
 embedding = OpenAIEmbeddings()
 log_data=[]
 lines = []
-file_path = 'data/test_log1.txt'
+file_path = 'data/test_log2.txt'
 persist_directory = 'db'
 
-loader = TextLoader('data/test_log1.txt', encoding = 'UTF-8')
+loader = TextLoader('data/test_log2.txt', encoding = 'UTF-8')
 doc = loader.load()
 len(doc)
 
@@ -46,9 +46,26 @@ with open(file_path, 'r') as file:
         time, prefix, message = extract_log_data(line)
         log_data.append({'time': time, 'prefix': prefix, 'message': message})
 
+import hashlib
+
+# Function to generate a unique hash for a file
+def generate_file_hash(file_path):
+    hasher = hashlib.md5()
+    with open(file_path, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
+# Generate a unique identifier for the file
+file_identifier = generate_file_hash(file_path)
+
+# Use the unique identifier in the persist directory
+unique_persist_directory = os.path.join(persist_directory, file_identifier)
+
+# Initialize the vector database with the unique persist directory
 vectordb = Chroma.from_documents(documents=texts,
                                  embedding=embedding,
-                                 persist_directory=persist_directory)
+                                 persist_directory=unique_persist_directory)
 vectordb.persist()
 
-print(vectordb)
+print("Vectordb initialized with unique persist directory:", unique_persist_directory)
