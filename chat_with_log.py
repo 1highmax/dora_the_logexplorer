@@ -21,7 +21,7 @@ context_history = ""
 client = OpenAI()
 
 # Setup the directory for database
-persist_directory = 'db_final'
+persist_directory = 'db'
 embedding = OpenAIEmbeddings()
 
 # Initialize the vector database
@@ -47,9 +47,9 @@ def process_llm_response(llm_response):
     return response + sources
 
 
-def request_summary_from_analysis():
+def request_summary_from_analysis(file):
     print("Analyzing log file...")
-    summary = summarize_file("data/final_log_final.txt")
+    summary = summarize_file(file)
     print("requesting summary...")
     request = "Context:\n" + summary + "\nSummarize the context in your own words. Do not quote the context directly, use your own words. rephrase everything. do not reuse parts of the context in your answer.. Give relevant examples in the log file!"
     # docs = retriever.get_relevant_documents(request)
@@ -87,6 +87,7 @@ def handle_chat(summary):
         summary = summary_response["result"]
         print("New Summary:\n" + summary)
 # Start the chat
-summary = request_summary_from_analysis()
+file = "data/final_log_final.txt"
+summary = request_summary_from_analysis(file)
 print("Sumamry:\n" + summary)
 handle_chat(summary)
