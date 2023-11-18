@@ -1,5 +1,7 @@
 # Hackathon Loganalysis Tum 2023 11
 
+![Hackathon Logo](Dora-Image.png)
+
 Welcome to the "Hackathon Loganalysis Tum 2023 11" repository. This project is part of a broader initiative to develop log analysis tools, as part of a competition hosted by Rohde & Schwarz.
  
 ## Motivation:
