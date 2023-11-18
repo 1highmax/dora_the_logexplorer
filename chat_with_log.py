@@ -24,7 +24,7 @@ client = OpenAI()
 import os
 
 # Set the directory path
-persist_directory = 'db/a716d54d-a48a-484e-8880-5cb44d767635'
+persist_directory = 'db/'
 
 # Rest of your script...
 
