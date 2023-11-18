@@ -6,7 +6,6 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 from utils.chat_with_log import handle_chat, request_summary_from_analysis
 from utils.create_db import create_database
 
-from utils.create_db import create_database
 
 
 # Corrected: st.set_page_config should only be called once at the beginning of the script
@@ -115,8 +114,11 @@ with col1:
         print(saved_file_path)
 
         st.write("Creating Summary")
+        
         request_summary_from_analysis(saved_file_path)
-
+        with open("summary.txt", 'r') as file:
+            summary_text=file.read()
+        st.session_state['summary'] = summary_text
         # Process the file content with your function
         st.write("Creating Database")
         create_database(saved_file_path)

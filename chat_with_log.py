@@ -61,10 +61,13 @@ def request_summary_from_analysis(saved_file_path):
     # docs = retriever.get_relevant_documents(request)
     llm_response = qa_chain(request)  # Adjust this line as per LangChain's implementation
     output = "Summary:\n"+llm_response["result"]
+    with open("summary.txt", 'w') as file:  # 'a' for append mode
+            file.write(output + '\n')
     return output
 
 
 def handle_chat(question):
+    print("begin of handle chat")
     global context_history  # Use the global context history variable
     # question = input("Ask a question: ")
 
@@ -81,7 +84,7 @@ def handle_chat(question):
     llm_response = qa_chain("Context so far:\n" + context_history + "\n\n\n" + question)  # Adjust this line as per LangChain's implementation
     response = llm_response['result']
     # response = process_llm_response(llm_response)
-    print(response)
+    print("response to context history:" + response)
 
     # Update context with the response
     with open("summary.txt", 'r') as file:
