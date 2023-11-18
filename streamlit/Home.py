@@ -22,7 +22,7 @@ tab1, tab2 = st.tabs(['Chat', 'Log File Snippets'])
 
 # Define the path to your background image - this should be a URL or a local path
 # If using a local path during development, it has to be relative to the `static` folder in Streamlit
-background_image_path = 'url("https://i.postimg.cc/gjVLWzkX/image.png")'
+background_image_path = 'url("https://i.postimg.cc/bv739fLC/image.png")'#
 
 # Use local CSS to use a full-width background image
 def set_background_image(image_path):
@@ -44,18 +44,16 @@ def set_background_image(image_path):
     )
 
 # Call the function to set the background image before creating any Streamlit elements
-st.set_page_config(page_title="Dora the Log-Explorer", layout='wide', page_icon='🔍')
+st.set_page_config(page_title="Dora the LogFile-Explorer", layout='wide', page_icon='🔍')
 set_background_image(background_image_path)
-
-def cached_backend_response(message):
-    response = handle_chat(message)
-    print("response: ", response)
-    return response
+#set_custom_font_sizes()  # Add this line
 
 # Placeholder for the chatbot function
 def chatbot_response(message):
     # Now using the cached function to get the response
-    return f"Dora: {cached_backend_response(message)}"
+    response = handle_chat(message)
+    print(response)
+    return f"Dora: {response}"
 
 
 def save_uploaded_file(uploaded_file, directory="data", filename="uploaded_log.txt"):
@@ -73,12 +71,12 @@ def save_uploaded_file(uploaded_file, directory="data", filename="uploaded_log.t
 
 def display_message(message, is_user=True):
     # User messages are grey and aligned left, chatbot responses are blue and aligned right
-    bubble_color = "#A0A0A0" if is_user else "#009BEA"
-    align_text = "left" if is_user else "right"
+    bubble_color = "#262730" if is_user else "#009BEA"
+    align_text = "left" if is_user else "left"
     float_text = "left" if is_user else "right"  # Ensures that the bubble floats to the correct side
 
     html = f"""
-    <div style="margin: 5px; padding: 10px; background-color: {bubble_color}; border-radius: 15px; text-align: {align_text}; max-width: 60%; float: {float_text}; clear: both;">
+    <div style="margin: 5px; padding: 10px; background-color: {bubble_color}; border-radius: 15px; text-align: {align_text}; max-width: 90%; float: {float_text}; clear: both; word-wrap: break-word; overflow-wrap: break-word;">
         {message}
     </div>
     """
@@ -117,6 +115,8 @@ def read_file_lines(file_path, start_line, end_line):
     start_index = max(start_line - 1, 0)
     end_index = min(end_line, len(lines))
     return lines[start_index:end_index]
+
+
 
 
 # Function to handle sending messages
@@ -239,3 +239,11 @@ with tab1:
     if st.button('Send'):
         st.write("Thinking ... ")
         send_message()
+
+# Summary section in col2 (40% width)
+with col1:
+    st.subheader("Log Summary")
+    if 'summary' in st.session_state and st.session_state['summary']:
+        st.text_area("Summary Text", value=st.session_state['summary'], height=300)
+    else:
+        st.write("The summary will appear here after you upload and process a log file.")
