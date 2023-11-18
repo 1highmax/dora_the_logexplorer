@@ -6,6 +6,7 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 from utils.chat_with_log import handle_chat, request_summary_from_analysis
 from utils.create_db import create_database
 import re
+import shutil
 
 st.set_page_config(page_title="Chat", layout='wide')
 st.header('Dora the Log-Explorer')
@@ -192,6 +193,13 @@ with tab1:
             st.session_state['summary'] = summary_text
             # Process the file content with your function
             st.write("Creating Database")
+            if os.path.basename(saved_file_path) == "test_log1.txt":
+                print("moving existing database to db/")
+                shutil.move('db_test_log1/', 'db/')
+            elif os.path.basename(saved_file_path) == "test_log2.txt":
+                shutil.move('db_test_log2/', 'db/')
+            elif os.path.basename(saved_file_path) == "final_log.txt":
+                shutil.move('db_final_log/', 'db/')
             create_database(saved_file_path)
             st.write("Log-File Ready to use")
             st.session_state['file_processed'] = True
