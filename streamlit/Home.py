@@ -84,6 +84,9 @@ def send_message():
         
         # Get chatbot response and add to conversation
         response = chatbot_response(user_input)
+        with open("summary.txt", 'r') as file:
+            summary_text=file.read()
+        st.session_state['summary'] = summary_text
         add_to_conversation(response, is_user=False)
 
     # Reset the input box
@@ -103,35 +106,40 @@ st.markdown(desc)
 
 col1, col2 = st.columns(2)
 
+
 # In your Streamlit app
 with col1:
-    uploaded_file = st.file_uploader("Upload a log file", type=["txt", "out"], key="log_file_uploader")
+    if not st.session_state.get('file_processed'):
+        uploaded_file = st.file_uploader("Upload a log file", type=["txt", "out"], key="log_file_uploader")
 
-    if uploaded_file is not None:
-        st.write("Uploading File")
-        # Save the uploaded file and get its path
-        saved_file_path = save_uploaded_file(uploaded_file)
-        print(saved_file_path)
+        if uploaded_file is not None:
+            st.write("Uploading File")
+            # Save the uploaded file and get its path
+            saved_file_path = save_uploaded_file(uploaded_file)
+            print(saved_file_path)
 
-        st.write("Creating Summary")
-        
-        request_summary_from_analysis(saved_file_path)
-        with open("summary.txt", 'r') as file:
-            summary_text=file.read()
-        st.session_state['summary'] = summary_text
-        # Process the file content with your function
-        st.write("Creating Database")
-        create_database(saved_file_path)
-        st.write("Log-File Ready to use")
-
-    else:
-        st.write("Please upload a text file.")
+            st.write("Creating Summary")
+            
+            request_summary_from_analysis(saved_file_path)
+            with open("summary.txt", 'r') as file:
+                summary_text=file.read()
+            st.session_state['summary'] = summary_text
+            # Process the file content with your function
+            st.write("Creating Database")
+            create_database(saved_file_path)
+            st.write("Log-File Ready to use")
+            st.session_state['file_processed'] = True
+        else:
+            st.write("Please upload a text file.")
 
 with col2:
     # Section for summary at the top of col2
     st.subheader("Log Summary")
     if 'summary' in st.session_state and st.session_state['summary']:
         st.text_area("Summary Text", value=st.session_state['summary'], height=300)
+        with open("summary.txt", 'r') as file:
+            summary_text=file.read()
+            st.session_state['summary'] = summary_text
     else:
         st.write("The summary will appear here after you upload and process a log file.")
 
