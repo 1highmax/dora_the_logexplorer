@@ -9,8 +9,35 @@ from utils.create_db import create_database
 from utils.create_db import create_database
 
 
+# Corrected: st.set_page_config should only be called once at the beginning of the script
 
-st.set_page_config(page_title="Chat", layout='wide')
+
+# Define the path to your background image - this should be a URL or a local path
+# If using a local path during development, it has to be relative to the `static` folder in Streamlit
+background_image_path = 'url("https://i.postimg.cc/gjVLWzkX/image.png")'
+
+# Use local CSS to use a full-width background image
+def set_background_image(image_path):
+    """
+    This function inserts custom CSS to make the provided image the background
+    """
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: {image_path};
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Call the function to set the background image before creating any Streamlit elements
+st.set_page_config(page_title="Dora the Log-Explorer", layout='wide', page_icon='🔍')
+set_background_image(background_image_path)
 
 def cached_backend_response(message):
     response = handle_chat(message)
@@ -99,26 +126,27 @@ with col1:
         st.write("Please upload a text file.")
 
 with col2:
-    # Initialize session state to store conversation
-    if 'conversation' not in st.session_state:
-        st.session_state['conversation'] = []
+    # Section for summary at the top of col2
+    st.subheader("Log Summary")
+    if 'summary' in st.session_state and st.session_state['summary']:
+        st.text_area("Summary Text", value=st.session_state['summary'], height=300)
+    else:
+        st.write("The summary will appear here after you upload and process a log file.")
 
-    # Display existing conversation
-    for message in st.session_state['conversation']:
-        is_user = not st.session_state['conversation'].index(message) % 2 == 0
-        display_message(message, is_user)
+# Now comes the conversation part, below the summary in col2
+st.subheader("Conversation")
+if 'conversation' not in st.session_state:
+    st.session_state['conversation'] = []
 
-    # Text input for user message with a callback
-    st.text_input("Your message", key="user_input", on_change=send_message, value="")
+# Display existing conversation
+for message in st.session_state['conversation']:
+    is_user = not st.session_state['conversation'].index(message) % 2 == 0
+    display_message(message, is_user)
 
-    # Button to send the message
-    if st.button('Send'):
-        st.write("Thinking ... ")
-        send_message()
+# Text input for user message with a callback
+st.text_input("Your message", key="user_input", on_change=send_message, value="")
 
-# Section for summary below the columns
-st.subheader("Log Summary")
-if 'summary' in st.session_state and st.session_state['summary']:
-    st.text_area("Summary Text", value=st.session_state['summary'], height=300)
-else:
-    st.write("The summary will appear here after you upload and process a log file.")
+# Button to send the message
+if st.button('Send'):
+    st.write("Thinking ... ")
+    send_message()
