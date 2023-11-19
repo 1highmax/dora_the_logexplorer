@@ -8,7 +8,7 @@ from utils.create_db import create_database
 import re
 import shutil
 
-st.set_page_config(page_title="Chat", layout='wide')
+st.set_page_config(page_title="Dora the Log-Explorer", layout='wide', page_icon='🔍')
 st.header('Dora the Log-Explorer')
 desc = """Start questioning Dora about the specified log file."""
 st.markdown(desc)
@@ -44,7 +44,6 @@ def set_background_image(image_path):
     )
 
 # Call the function to set the background image before creating any Streamlit elements
-st.set_page_config(page_title="Dora the LogFile-Explorer", layout='wide', page_icon='🔍')
 set_background_image(background_image_path)
 #set_custom_font_sizes()  # Add this line
 
@@ -127,29 +126,14 @@ def send_message():
         
         # Get chatbot response and add to conversation
         response = chatbot_response(user_input)
-        with open("summary.txt", 'r') as file:
-            summary_text=file.read()
-        st.session_state['summary'] = summary_text
-        add_to_conversation(response, is_user=False)
-
-    # Reset the input box
-    st.session_state['user_input'] = ""
-
-# Function to handle sending messages
-def send_message():
-    user_input = st.session_state.get('user_input', '')
-    if user_input:  # Check if the input is not empty
-        add_to_conversation(user_input, is_user=True)
-        
-        # Get chatbot response and add to conversation
-        response = chatbot_response(user_input)
         add_to_conversation(response, is_user=False)
 
         with open("summary.txt", 'r') as file:
             summary_text=file.read()
         st.session_state['summary'] = summary_text
 
-        if saved_file_path is not None:
+        if os.path.exists("data/uploaded_log.txt"):
+            saved_file_path = "data/uploaded_log.txt"
             # Extracting and printing the relevant lines
             extracted_lines = extract_lines_with_dates(response)
             for extracted_line in extracted_lines:
@@ -164,19 +148,10 @@ def send_message():
                     selected_lines = read_file_lines(saved_file_path, start_line, stop_line)
                     with tab2:
                         st.text_area("Displaying lines from {} to {}:".format(start_line, stop_line), ''.join(selected_lines), height=360)
-
+    st.session_state['user_input'] = ""
 # New function to add messages to conversation
 def add_to_conversation(message, is_user=True):
     st.session_state['conversation'].append(message)
-
-saved_file_path = None
-
-def move_directory(src, dest):
-    if os.path.exists(src):
-        print(f"Moving existing database from {src} to {dest}")
-        shutil.move(src, dest)
-    else:
-        print(f"Directory {src} does not exist. No action taken.")
 
 with tab1:
     # In your Streamlit app
@@ -185,31 +160,26 @@ with tab1:
         if not st.session_state.get('file_processed'):
             uploaded_file = st.file_uploader("Upload a log file", type=["txt", "out"], key="log_file_uploader")
 
-        if uploaded_file is not None:
-            st.write("Uploading File")
-            # Save the uploaded file and get its path
-            saved_file_path = save_uploaded_file(uploaded_file)
-            print(saved_file_path)
+            if uploaded_file is not None:
+                st.write("Uploading File")
+                # Save the uploaded file and get its path
+                saved_file_path = save_uploaded_file(uploaded_file)
+                print(saved_file_path)
 
-            st.write("Creating Summary")
-            
-            request_summary_from_analysis(saved_file_path)
-            with open("summary.txt", 'r') as file:
-                summary_text=file.read()
-            st.session_state['summary'] = summary_text
-            # Process the file content with your function
-            st.write("Creating Database")
-            if os.path.basename(saved_file_path) == "test_log1.txt":
-                move_directory('db_test_log1/', 'db/')
-            elif os.path.basename(saved_file_path) == "test_log2.txt":
-                move_directory('db_test_log2/', 'db/')
-            elif os.path.basename(saved_file_path) == "final_log.txt":
-                move_directory('db_final_log/', 'db/')
-            create_database(saved_file_path)
-            st.write("Log-File Ready to use")
-            st.session_state['file_processed'] = True
-        else:
-            st.write("Please upload a text file.")
+                st.write("Creating Summary")
+                
+                request_summary_from_analysis(saved_file_path)
+                with open("summary.txt", 'r') as file:
+                    summary_text=file.read()
+                st.session_state['summary'] = summary_text
+                # Process the file content with your function
+                st.write("Creating Database")
+                print(os.path.basename(saved_file_path))
+                create_database(saved_file_path)
+                st.write("Log-File Ready to use")
+                st.session_state['file_processed'] = True
+            else:
+                st.write("Please upload a text file.")
 
     with col2:
         # Section for summary at the top of col2
