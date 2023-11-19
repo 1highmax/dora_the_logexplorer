@@ -38,7 +38,7 @@ def create_database(file_path):
     len(doc)
 
     # Splitting the text into chunks
-    text_splitter = RecursiveCharacterTextSplitter (chunk_size=1000, chunk_overlap=200)
+    text_splitter = RecursiveCharacterTextSplitter (chunk_size=1000, chunk_overlap=200) #1000,200
     texts = text_splitter.split_documents(doc)
 
     # Count the number of chunks

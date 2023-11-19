@@ -134,15 +134,13 @@ if not st.session_state.get('file_processed'):
         # Process the file content with your function
         st.write("Creating Database")
         print(os.path.basename(saved_file_path))
-        create_database(saved_file_path)
+        #create_database(saved_file_path)
         st.write("Log-File Ready to use")
         st.session_state['file_processed'] = True
     else:
         st.write("Please upload a text file.")
 
-
-
-
+tab1, tab2 = st.tabs(['Chat', 'Log File Snippets']) 
 # Function to handle sending messages
 def send_message():
     user_input = st.session_state.get('user_input', '')
@@ -173,7 +171,7 @@ def send_message():
                     selected_lines = read_file_lines(saved_file_path, start_line, stop_line)
                     with tab2:
                         st.text_area("Displaying lines from {} to {}:".format(start_line, stop_line), ''.join(selected_lines), height=360)
-    st.session_state['user_input'] = ""
+    #st.session_state['user_input'] = ""
 # New function to add messages to conversation
 def add_to_conversation(message, is_user=True):
     st.session_state['conversation'].append(message)
@@ -181,9 +179,8 @@ def add_to_conversation(message, is_user=True):
 
 
 col1, col2 = st.columns([1,2])
-with col2:
-    tab1, tab2 = st.tabs(['Chat', 'Log File Snippets']) 
-    with tab1:
+with tab1:
+    with col2:
         # Now comes the conversation part, below the summary in col2
         st.subheader("Conversation")
         if 'conversation' not in st.session_state:
@@ -202,8 +199,6 @@ with col2:
             st.write("Thinking ... ")
             send_message()
 
-    # Summary section in col2 (40% width)
-   # Summary section in col2 (40% width)
     with col1:
         st.subheader("Log Summary")
         if 'summary' in st.session_state and st.session_state['summary']:
