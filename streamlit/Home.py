@@ -9,13 +9,10 @@ import re
 import shutil
 
 st.set_page_config(page_title="Dora the Log-Explorer", layout='wide', page_icon='🔍')
-st.header('Dora the Log-Explorer')
+st.header('Dora the Log-File-Explorer')
 desc = """Start questioning Dora about the specified log file."""
 st.markdown(desc)
 
-col1, col2 = st.columns(2)
-st.subheader('Ask questions about your log file')
-tab1, tab2 = st.tabs(['Chat', 'Log File Snippets']) 
 
 # Corrected: st.set_page_config should only be called once at the beginning of the script
 
@@ -118,6 +115,34 @@ def read_file_lines(file_path, start_line, end_line):
 
 
 
+st.subheader('File Upload')
+if not st.session_state.get('file_processed'):
+    uploaded_file = st.file_uploader("Upload a log file", type=["txt", "out"], key="log_file_uploader")
+
+    if uploaded_file is not None:
+        st.write("Uploading File")
+        # Save the uploaded file and get its path
+        saved_file_path = save_uploaded_file(uploaded_file)
+        print(saved_file_path)
+
+        st.write("Creating Summary")
+        
+        request_summary_from_analysis(saved_file_path)
+        with open("summary.txt", 'r') as file:
+            summary_text=file.read()
+        st.session_state['summary'] = summary_text
+        # Process the file content with your function
+        st.write("Creating Database")
+        print(os.path.basename(saved_file_path))
+        create_database(saved_file_path)
+        st.write("Log-File Ready to use")
+        st.session_state['file_processed'] = True
+    else:
+        st.write("Please upload a text file.")
+
+
+
+
 # Function to handle sending messages
 def send_message():
     user_input = st.session_state.get('user_input', '')
@@ -153,67 +178,47 @@ def send_message():
 def add_to_conversation(message, is_user=True):
     st.session_state['conversation'].append(message)
 
-with tab1:
-    # In your Streamlit app
+
+
+col1, col2 = st.columns([1,2])
+with col2:
+    tab1, tab2 = st.tabs(['Chat', 'Log File Snippets']) 
+    with tab1:
+        # Now comes the conversation part, below the summary in col2
+        st.subheader("Conversation")
+        if 'conversation' not in st.session_state:
+            st.session_state['conversation'] = []
+
+        # Display existing conversation
+        for message in st.session_state['conversation']:
+            is_user = not st.session_state['conversation'].index(message) % 2 == 0
+            display_message(message, is_user)
+
+        # Text input for user message with a callback
+        st.text_input("Your message", key="user_input", on_change=send_message, value="")
+
+        # Button to send the message
+        if st.button('Send'):
+            st.write("Thinking ... ")
+            send_message()
+
+    # Summary section in col2 (40% width)
+   # Summary section in col2 (40% width)
     with col1:
-        st.subheader('File Upload')
-        if not st.session_state.get('file_processed'):
-            uploaded_file = st.file_uploader("Upload a log file", type=["txt", "out"], key="log_file_uploader")
-
-            if uploaded_file is not None:
-                st.write("Uploading File")
-                # Save the uploaded file and get its path
-                saved_file_path = save_uploaded_file(uploaded_file)
-                print(saved_file_path)
-
-                st.write("Creating Summary")
-                
-                request_summary_from_analysis(saved_file_path)
-                with open("summary.txt", 'r') as file:
-                    summary_text=file.read()
-                st.session_state['summary'] = summary_text
-                # Process the file content with your function
-                st.write("Creating Database")
-                print(os.path.basename(saved_file_path))
-                create_database(saved_file_path)
-                st.write("Log-File Ready to use")
-                st.session_state['file_processed'] = True
-            else:
-                st.write("Please upload a text file.")
-
-    with col2:
-        # Section for summary at the top of col2
         st.subheader("Log Summary")
         if 'summary' in st.session_state and st.session_state['summary']:
-            st.text_area("Summary Text", value=st.session_state['summary'], height=300)
-            with open("summary.txt", 'r') as file:
-                summary_text=file.read()
-                st.session_state['summary'] = summary_text
+            # Split the summary text by newlines and wrap each line in <p> tags
+            summary_lines = st.session_state['summary'].split('\n')
+            summary_formatted = ''.join(f'<p>{line}</p>' for line in summary_lines if line)
+
+            summary_block = f"""
+                <div style="border: 0px solid #ced4da; background-color: #262730; border-radius: 0px; padding: 10px; margin-bottom: 20px; overflow-y: auto;">
+                    {summary_formatted}
+                </div>
+            """
+            st.markdown(summary_block, unsafe_allow_html=True)
         else:
             st.write("The summary will appear here after you upload and process a log file.")
 
-    # Now comes the conversation part, below the summary in col2
-    st.subheader("Conversation")
-    if 'conversation' not in st.session_state:
-        st.session_state['conversation'] = []
 
-    # Display existing conversation
-    for message in st.session_state['conversation']:
-        is_user = not st.session_state['conversation'].index(message) % 2 == 0
-        display_message(message, is_user)
 
-    # Text input for user message with a callback
-    st.text_input("Your message", key="user_input", on_change=send_message, value="")
-
-    # Button to send the message
-    if st.button('Send'):
-        st.write("Thinking ... ")
-        send_message()
-
-# Summary section in col2 (40% width)
-with col1:
-    st.subheader("Log Summary")
-    if 'summary' in st.session_state and st.session_state['summary']:
-        st.text_area("Summary Text", value=st.session_state['summary'], height=300)
-    else:
-        st.write("The summary will appear here after you upload and process a log file.")
